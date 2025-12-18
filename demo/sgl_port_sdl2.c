@@ -104,7 +104,7 @@ static uint32_t system_tick(uint32_t interval, void *param)
 static uint32_t anim_systick(uint32_t interval, void *param)
 {
     SGL_UNUSED(param);
-    sgl_anim_tick_inc(1);
+    sgl_tick_inc(1);
     return interval;
 }
 
@@ -182,8 +182,8 @@ sgl_port_sdl2_t* sgl_port_sdl2_init(void)
         .xres_virtual = CONFIG_SGL_PANEL_WIDTH,
         .yres_virtual = CONFIG_SGL_PANEL_HEIGHT,
         .flush_area = panel_flush_area,
-        .framebuffer = panel_buffer,
-        .framebuffer_size = SGL_ARRAY_SIZE(panel_buffer),
+        .buffer = panel_buffer,
+        .buffer_size = SGL_ARRAY_SIZE(panel_buffer),
     };
 
     sgl_device_log_register(log_stdout);
