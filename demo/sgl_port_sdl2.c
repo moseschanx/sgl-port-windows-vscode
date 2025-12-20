@@ -147,15 +147,20 @@ static int mouse_event_interrupt(void *userdata, SDL_Event *event)
 }
 
 
-static void panel_flush_area(int16_t x, int16_t y, int16_t w, int16_t h, sgl_color_t *src)
+static void panel_flush_area(int16_t x1, int16_t y1, int16_t x2, int16_t y2, sgl_color_t *src)
 {
+    // x2, y2 are coordinates, not dimensions
+    // Calculate width and height
+    int16_t width = x2 - x1 + 1;
+    int16_t height = y2 - y1 + 1;
+    
     sgl_color_t *dest = sdl2_frame_buffer;
-    dest += (x + y * CONFIG_SGL_PANEL_WIDTH);
+    dest += (x1 + y1 * CONFIG_SGL_PANEL_WIDTH);
 
-    for(int i = 0; i < h; i ++) {
-        memcpy(dest, src, w * sizeof(sgl_color_t));
+    for(int i = 0; i < height; i ++) {
+        memcpy(dest, src, width * sizeof(sgl_color_t));
         dest += CONFIG_SGL_PANEL_WIDTH;
-        src += w;
+        src += width;
     }
 
     flush_window(m_renderer);
@@ -236,6 +241,6 @@ void sgl_port_sdl2_deinit(sgl_port_sdl2_t* sdl2_dev)
 {
     SDL_RemoveTimer(sdl2_dev->systick);
     SDL_RemoveTimer(sdl2_dev->anim_systick);
-    SDL_DestroyWindow(sdl2_dev->m_window);
+        SDL_DestroyWindow(sdl2_dev->m_window);
     SDL_DestroyRenderer(m_renderer);
 }
