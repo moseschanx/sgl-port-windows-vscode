@@ -1,49 +1,25 @@
-cmake_minimum_required(VERSION 3.10)
-project(sgl C CXX)
+cmake_minimum_required(VERSION 3.12)
+project(sgl_simulator C CXX)
 
-# 定义可执行文件目标
-# add_executable(myapp demo/main.c)
-
-# 设置C标准
+# Set C standard
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# 定义输出目录
+# Define output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output/lib)
 
-# 主目录
-set(SGL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(DEMO_DIR ${SGL_ROOT_DIR}/demo)
+# Define paths
+set(DEMO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/demo)
 
-# SGL库源文件
-file(GLOB SGL_CORE_SOURCES ${SGL_ROOT_DIR}/sgl/source/core/*.c)
-file(GLOB SGL_DRAW_SOURCES ${SGL_ROOT_DIR}/sgl/source/draw/*.c)
-file(GLOB SGL_FONTS_SOURCES ${SGL_ROOT_DIR}/sgl/source/fonts/*.c)
-file(GLOB SGL_MM_SOURCES ${SGL_ROOT_DIR}/sgl/source/mm/lwmem/*.c)
-file(GLOB SGL_WIDGETS_SOURCES ${SGL_ROOT_DIR}/sgl/source/widgets/*/*.c)
+# Include SGL library
+add_subdirectory(sgl)
 
-# 合并所有SGL源文件
-set(SGL_SOURCES
-    ${SGL_CORE_SOURCES}
-    ${SGL_DRAW_SOURCES}
-    ${SGL_FONTS_SOURCES}
-    ${SGL_MM_SOURCES}
-    ${SGL_WIDGETS_SOURCES}
-)
+# Get SGL include directories
+get_property(SGL_INCLUDE_DIRS GLOBAL PROPERTY "SGL_INCLUDE_DIRS")
 
-# 包含目录
-include_directories(
-    ${SGL_ROOT_DIR}/sgl/source
-    ${SGL_ROOT_DIR}/sgl/source/include
-    ${DEMO_DIR}/sdl/include/SDL2
-)
-
-# 创建SGL库
-add_library(sgl STATIC ${SGL_SOURCES})
-
-# Demo应用程序源文件
+# Define demo application sources
 set(DEMO_SOURCES
     ${DEMO_DIR}/main.c
     ${DEMO_DIR}/sgl_port_sdl2.c
@@ -51,25 +27,38 @@ set(DEMO_SOURCES
     ${DEMO_DIR}/bg.c
 )
 
-set(SDL2_LIB_NAME
-    mingw32 SDL2main SDL2
+# Create simulator executable
+add_executable(sgl_simulator ${DEMO_SOURCES})
+
+# Add dependencies for SGL export
+add_dependencies(sgl_simulator sgl_export)
+
+# Include SDL2 and SGL headers
+target_include_directories(sgl_simulator PRIVATE
+    ${DEMO_DIR}/sdl/include/SDL2
+    ${SGL_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/sgl/source
 )
-link_directories(
+
+# Link SDL2 libraries
+target_link_directories(sgl_simulator PRIVATE
     ${DEMO_DIR}/sdl/lib
 )
 
-# 创建演示应用程序
-add_executable(sgl_simulator ${DEMO_SOURCES})
+target_link_libraries(sgl_simulator PRIVATE
+    sgl
+    mingw32
+    SDL2main
+    SDL2
+)
 
-# 链接库
-target_link_libraries(sgl_simulator sgl ${SDL2_LIB_NAME})
-
+# Copy config file and SDL2.dll post-build
 add_custom_command(
     TARGET sgl_simulator POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
         "${DEMO_DIR}/sgl_config.h"
-        "${SGL_ROOT_DIR}/sgl/source/sgl_config.h"
-    COMMENT "Force copying sgl_config.h (always overwrite)"
+        "${CMAKE_CURRENT_SOURCE_DIR}/sgl/source/sgl_config.h"
+    COMMENT "Copying sgl_config.h"
 )
 
 add_custom_command(
@@ -80,16 +69,8 @@ add_custom_command(
     COMMENT "Copying SDL2.dll to output directory"
 )
 
-# 安装规则
-install(TARGETS sgl_simulator
-    RUNTIME DESTINATION bin
-)
-
-# 复制配置文件到构建目录
+# Copy config file to build directory
 file(COPY ${DEMO_DIR}/lm.cfg DESTINATION ${CMAKE_BINARY_DIR}/)
 
-# 输出信息
-message(STATUS "SGL project configured successfully")
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "Output directory: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+message(STATUS "SGL Simulator configured successfully")
 
